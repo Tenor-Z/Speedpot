@@ -1,3 +1,6 @@
+# Ideally, the program should be executed by running this file through Python
+# for example 'python3 main.py'
+
 import tkinter as tk
 from gui import HoneypotGUI  # Import HoneypotGUI from the gui.py module
 from config import HOST, PORT  # Import the HOST and PORT from config.py
