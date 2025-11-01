@@ -1,0 +1,23 @@
+# Speedpot Honeypot - Core Dependencies
+
+# GUI Framework
+# tkinter is included with Python, no need to install
+
+# Database
+sqlite3  # Included with Python
+
+# Web Dashboard (Optional - only needed for dashboard.py)
+streamlit>=1.28.0
+pandas>=2.0.0
+plotly>=5.14.0
+
+# Network & Security
+pypacker>=4.9
+requests>=2.31.0
+
+# Development & Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Utilities
+python-dateutil>=2.8.2
