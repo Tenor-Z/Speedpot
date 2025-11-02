@@ -2,9 +2,9 @@
 
 ## Starting the Application
 
-\`\`\`bash
+```bash
 python main.py
-\`\`\`
+```
 
 On first run, select your network interface:
 - **0.0.0.0** - Accepts connections from any IP (production)
