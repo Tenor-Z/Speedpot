@@ -1,4 +1,4 @@
-# 🛡️ Speedpot - Intelligent Honeypot for Network Security
+# Speedpot - Intelligent Honeypot for Network Security
 
 <div align="center">
 
