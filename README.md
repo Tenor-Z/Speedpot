@@ -67,7 +67,7 @@ Whether you're a security researcher, network administrator, or cybersecurity en
 
 - **OS**: Windows 7 or later (may work on Linux/macOS with modifications)
 - **Python**: 3.8 or higher
-- **RAM**: 512 MB minimum
+- **RAM**: 30 MB minimum
 - **Disk Space**: 100 MB for installation + space for logs/database
 
 ## Installation
@@ -75,20 +75,20 @@ Whether you're a security researcher, network administrator, or cybersecurity en
 ### Option 1: Direct Download & Run
 
 1. **Download Speedpot**
-\`\`\`bash
+```bash
 git clone https://github.com/yourusername/speedpot.git
 cd speedpot
-\`\`\`
+```
 
 2. **Install Dependencies**
-\`\`\`bash
+```bash
 pip install -r requirements.txt
-\`\`\`
+```
 
 3. **Run Speedpot**
-\`\`\`bash
+```bash
 python main.py
-\`\`\`
+```
 
 ### Option 2: Windows Executable (Coming Soon)
 
@@ -96,19 +96,19 @@ Pre-compiled `.exe` will be available for download without requiring Python inst
 
 ### Option 3: Docker (Experimental)
 
-\`\`\`bash
+```bash
 docker build -t speedpot .
 docker run -p 21:21 -p 22:22 -p 23:23 -p 25:25 -p 80:80 -p 443:443 -p 3389:3389 -p 8080:8080 speedpot
-\`\`\`
+```
 
 ## Quick Start
 
 ### Basic Usage
 
 1. **Launch Speedpot**
-\`\`\`bash
+```bash
 python main.py
-\`\`\`
+```
 
 2. **Select Network Interface**
    - Choose to bind to all interfaces (0.0.0.0) or localhost (127.0.0.1)
