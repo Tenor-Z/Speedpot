@@ -266,7 +266,7 @@ Speedpot detects the following attack patterns:
 
 ## 🤝 Contributing
 
-I will always welcome contributions! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
+I will always welcome contributions! Please see [CONTRIBUTING.md](/docs/CONTRIBUTING.md) for guidelines.
 
 ### Development Setup
 ```bash
