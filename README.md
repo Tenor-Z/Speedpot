@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Speedpot Logo](Speedpot/images/speedpot.ico)
+![Speedpot Logo](speedpot.ico)
 
 **A comprehensive, intelligent honeypot designed to detect, analyze, and block cyber attacks in real-time.**
 
@@ -12,7 +12,7 @@
 
 ## Overview
 
-Speedpot is a full-stack honeypot application that emulates vulnerable services and intelligently detects advanced cyber attacks including port scans, SQL injection, cross-site scripting (XSS), command injection, path traversal, and more. Built with Python and Tkinter, Speedpot provides real-time monitoring, threat intelligence, and automated blocking capabilities.
+Speedpot is an open-source, full-stack honeypot application that emulates vulnerable services and intelligently detects advanced cyber attacks including port scans, SQL injection, cross-site scripting (XSS), command injection, path traversal, and more. Built with Python and Tkinter, Speedpot provides real-time monitoring, threat intelligence, and automated blocking capabilities.
 
 Whether you're a security researcher, network administrator, or cybersecurity enthusiast, Speedpot helps you understand attack patterns and strengthen your network defenses.
 
@@ -225,7 +225,7 @@ Speedpot detects the following attack patterns:
 | Port Scan | Rapid multi-port connections | Medium | Classify and track |
 | Scanner Detection | Known scanner user-agents | Medium/High | Classify and track |
 
-## 🔧 Troubleshooting
+## 🔧 Common Troubleshooting
 
 ### Honeypot Won't Start
 - Ensure no other services are using the target ports
@@ -266,7 +266,7 @@ Speedpot detects the following attack patterns:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+I will always welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ### Development Setup
 ```bash
@@ -318,6 +318,6 @@ Speedpot is provided for educational and authorized security testing purposes on
 
 ---
 
-**Made with ❤️ by the Tenor-Z**
+**Made with ❤️ by Tenor-Z**
 
-⭐ Star us on GitHub if you find this project useful!
+⭐ Star me on GitHub if you find this project useful!
