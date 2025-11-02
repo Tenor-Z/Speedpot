@@ -2,9 +2,9 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in Speedpot, please **do not** open a public GitHub issue. Instead, please email the maintainers directly.
+If you discover a security vulnerability in Speedpot, please **do not** open a public GitHub issue. Instead, please email me directly.
 
-**Email**: [security@speedpot.dev] *(Replace with actual email)*
+**Email**: [tjbifolchi@outlook.com]
 
 Please include:
 * Type of vulnerability
@@ -47,8 +47,8 @@ We will:
 
 | Version | Supported          |
 |---------|-------------------|
-| 1.0.x   | ✅ Active Support |
-| < 1.0   | ❌ No Support     |
+| 1.4.x   | ✅ Active Support |
+| < 1.4   | ❌ No Support     |
 
 ## Security Best Practices
 
@@ -84,7 +84,7 @@ We will:
 ## Questions?
 
 If you have questions about security, please contact the maintainers or create a private security advisory.
-\`\`\`
+```
 
 ```text file=".gitignore"
 # Byte-compiled / optimized / DLL files
