@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Speedpot Logo](speedpot.ico)
+![Speedpot Logo](Speedpot/images/speedpot.ico)
 
 **A comprehensive, intelligent honeypot designed to detect, analyze, and block cyber attacks in real-time.**
 
@@ -18,7 +18,7 @@ Whether you're a security researcher, network administrator, or cybersecurity en
 
 ## Features
 
-### 🎯 Attack Detection
+### Attack Detection
 - **Port Scan Detection** - Identifies common port scanning patterns with threat classification
 - **SQL Injection Detection** - Detects SQL injection attempts with context-aware analysis
 - **XSS Attack Detection** - Identifies cross-site scripting payloads
@@ -27,20 +27,20 @@ Whether you're a security researcher, network administrator, or cybersecurity en
 - **RCE Detection** - Identifies remote code execution attempts
 - **Malicious Scanner Detection** - Recognizes vulnerability scanners (sqlmap, nikto, nmap, etc.)
 
-### 🛡️ Intelligent Protection
+### Intelligent Protection
 - **Auto-Blocking System** - Automatically blocks critical threats
 - **Severity Classification** - Categorizes attacks by threat level (Critical, High, Medium, Low)
 - **IP Reputation Tracking** - Maintains blocklist with duration and reason
 - **Context-Aware Analysis** - Reduces false positives from legitimate security scanning
 
-### 📊 Comprehensive Monitoring
+### Comprehensive Monitoring
 - **Real-Time Dashboard** - Live threat monitoring with service status
 - **Attack Analytics** - Detailed statistics on attack types, severity, and patterns
 - **Connection Tracking** - Per-service connection counting and statistics
 - **Network Intelligence** - Geographic and threat-level-based insights
 - **Web Dashboard** - Optional Streamlit-based web interface for remote monitoring
 
-### 🔧 Service Emulation
+### Service Emulation
 - **FTP (Port 21)** - File Transfer Protocol emulation
 - **SSH (Port 22)** - Secure Shell emulation
 - **Telnet (Port 23)** - Telnet protocol emulation
@@ -50,14 +50,14 @@ Whether you're a security researcher, network administrator, or cybersecurity en
 - **RDP (Port 3389)** - Remote Desktop Protocol emulation
 - **HTTP Alternate (Port 8080)** - Alternative web server emulation
 
-### ⚙️ Advanced Options
+### Advanced Options
 - **Log Retention** - Automatic log archiving and cleanup
 - **Log File Size Limits** - Automatic honeypot stopping when logs exceed size limits
 - **Scheduled Scans** - Automatic honeypot startup at specified times
 - **Debug Mode** - Detailed logging for troubleshooting
 - **Configuration Management** - Easy configuration through GUI
 
-### 📈 Database & Reporting
+### Database & Reporting
 - **SQLite Database** - Persistent storage of all attacks and connections
 - **Detailed Attack Records** - Full payload capture and analysis
 - **Export Capabilities** - Export data for external analysis
@@ -75,20 +75,20 @@ Whether you're a security researcher, network administrator, or cybersecurity en
 ### Option 1: Direct Download & Run
 
 1. **Download Speedpot**
-   \`\`\`bash
-   git clone https://github.com/yourusername/speedpot.git
-   cd speedpot
-   \`\`\`
+\`\`\`bash
+git clone https://github.com/yourusername/speedpot.git
+cd speedpot
+\`\`\`
 
 2. **Install Dependencies**
-   \`\`\`bash
-   pip install -r requirements.txt
-   \`\`\`
+\`\`\`bash
+pip install -r requirements.txt
+\`\`\`
 
 3. **Run Speedpot**
-   \`\`\`bash
-   python main.py
-   \`\`\`
+\`\`\`bash
+python main.py
+\`\`\`
 
 ### Option 2: Windows Executable (Coming Soon)
 
@@ -106,9 +106,9 @@ docker run -p 21:21 -p 22:22 -p 23:23 -p 25:25 -p 80:80 -p 443:443 -p 3389:3389 
 ### Basic Usage
 
 1. **Launch Speedpot**
-   \`\`\`bash
-   python main.py
-   \`\`\`
+\`\`\`bash
+python main.py
+\`\`\`
 
 2. **Select Network Interface**
    - Choose to bind to all interfaces (0.0.0.0) or localhost (127.0.0.1)
@@ -128,3 +128,4 @@ docker run -p 21:21 -p 22:22 -p 23:23 -p 25:25 -p 80:80 -p 443:443 -p 3389:3389 
 #### Simulate SQL Injection Attack
 ```powershell
 Invoke-WebRequest -Uri "http://127.0.0.1:80/?id=1' OR '1'='1" -ErrorAction SilentlyContinue
+
