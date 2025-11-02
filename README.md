@@ -6,7 +6,7 @@
 
 **A comprehensive, intelligent honeypot designed to detect, analyze, and block cyber attacks in real-time.**
 
-[Features](#features) • [Installation](#installation) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Contributing](#contributing) • [License](#license)
+[Features](#features) • [Installation](#installation) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Contributing](#CONTRIBUTING.md) • [License](#license)
 
 </div>
 
@@ -266,7 +266,7 @@ Speedpot detects the following attack patterns:
 
 ## 🤝 Contributing
 
-I will always welcome contributions! Please see [CONTRIBUTING.md](/docs/CONTRIBUTING.md) for guidelines.
+I will always welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ### Development Setup
 ```bash
