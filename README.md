@@ -6,7 +6,7 @@
 
 **A comprehensive, intelligent honeypot designed to detect, analyze, and block cyber attacks in real-time.**
 
-[Features](#features) • [Installation](#installation) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Contributing](#CONTRIBUTING.md) • [License](#license)
+[Features](#features) • [Installation](#installation) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Contributing](CONTRIBUTING.md) • [License](#license)
 
 </div>
 
