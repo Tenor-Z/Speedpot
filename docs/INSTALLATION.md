@@ -16,7 +16,7 @@
 
 2. **Download Speedpot**
    ```bash
-   git clone https://github.com/yourusername/speedpot.git
+   git clone https://github.com/Tenor-Z/speedpot.git
    cd speedpot
    ```
 
