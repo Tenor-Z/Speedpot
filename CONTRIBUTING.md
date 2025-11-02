@@ -41,26 +41,26 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 ## Development Setup
 
 1. **Fork the repository**
-   \`\`\`bash
-   git clone https://github.com/your-username/speedpot.git
+   ```bash
+   git clone https://github.com/Tenor-Z/speedpot.git
    cd speedpot
-   \`\`\`
+   ```
 
 2. **Create a virtual environment**
-   \`\`\`bash
+   ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
-   \`\`\`
+   ```
 
 3. **Install development dependencies**
-   \`\`\`bash
+   ```bash
    pip install -r requirements-dev.txt
-   \`\`\`
+   ```
 
 4. **Create a feature branch**
-   \`\`\`bash
+   ```bash
    git checkout -b feature/your-feature-name
-   \`\`\`
+   ```
 
 ## Styleguides
 
@@ -79,12 +79,12 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 * Limit the first line to 72 characters or less
 * Reference issues and pull requests liberally after the first line
 * Example:
-  \`\`\`
+  ```
   Add SQL injection detection for union-based attacks
   
   Implements pattern matching for UNION SELECT queries.
   Closes #42
-  \`\`\`
+  ```
 
 ### Documentation
 
@@ -131,6 +131,6 @@ Contributors will be recognized in:
 
 ## Questions?
 
-Feel free to open an issue or contact the maintainers.
+Feel free to open an issue or contact me.
 
 Thank you for contributing to Speedpot!
