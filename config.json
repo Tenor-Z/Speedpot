@@ -1,0 +1,19 @@
+{
+    "LOG_SIZE_MB": 50,
+    "SCAN_SCHEDULE": "01:43",
+    "LOG_RETENTION_DAYS": 5,
+    "DEBUG_MODE": false,
+    "THREAT_INTELLIGENCE": {
+        "ENABLED": true,
+        "ABUSEIPDB_API_KEY": "",
+        "VIRUSTOTAL_API_KEY": "",
+        "CACHE_DURATION_HOURS": 24,
+        "CHECK_THRESHOLD": 1
+    },
+    "PORT_SCAN_DETECTION": {
+        "ENABLED": true,
+        "TIME_WINDOW_SECONDS": 60,
+        "PORT_THRESHOLD": 5,
+        "ALERT_THRESHOLD": 10
+    }
+}
