@@ -315,7 +315,3 @@ Speedpot is provided for educational and authorized security testing purposes on
 - Advanced Threeat Intelligence capabilities by VirusTotal and AbuseIPDB
 
 ---
-
-**Made with ❤️ by Tenor-Z**
-
-⭐ Star me on GitHub if you find this project useful!
