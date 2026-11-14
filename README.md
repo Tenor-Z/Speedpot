@@ -14,9 +14,9 @@ Speedpot is an open-source, full-stack honeypot application that emulates vulner
 
 Whether you're a security researcher, network administrator, or cybersecurity enthusiast, Speedpot helps you understand attack patterns and strengthen your network defenses.
 
-## ✨ Features
+## Features
 
-### 🎯 Attack Detection
+### Attack Detection
 - **Port Scan Detection** - Identifies common port scanning patterns with threat classification
 - **SQL Injection Detection** - Detects SQL injection attempts with context-aware analysis
 - **XSS Attack Detection** - Identifies cross-site scripting payloads
@@ -25,20 +25,20 @@ Whether you're a security researcher, network administrator, or cybersecurity en
 - **RCE Detection** - Identifies remote code execution attempts
 - **Malicious Scanner Detection** - Recognizes vulnerability scanners (sqlmap, nikto, nmap, etc.)
 
-### 🔒 Intelligent Protection
+### Intelligent Protection
 - **Auto-Blocking System** - Automatically blocks critical threats
 - **Severity Classification** - Categorizes attacks by threat level (Critical, High, Medium, Low)
 - **IP Reputation Tracking** - Maintains blocklist with duration and reason
 - **Context-Aware Analysis** - Reduces false positives from legitimate security scanning
 
-### 📊 Comprehensive Monitoring
+### Comprehensive Monitoring
 - **Real-Time Dashboard** - Live threat monitoring with service status
 - **Attack Analytics** - Detailed statistics on attack types, severity, and patterns
 - **Connection Tracking** - Per-service connection counting and statistics
 - **Network Intelligence** - Geographic and threat-level-based insights
 - **Web Dashboard** - Optional Streamlit-based web interface for remote monitoring
 
-### 🔧 Service Emulation
+### Service Emulation
 - **FTP (Port 21)** - File Transfer Protocol emulation
 - **SSH (Port 22)** - Secure Shell emulation
 - **Telnet (Port 23)** - Telnet protocol emulation
@@ -48,27 +48,27 @@ Whether you're a security researcher, network administrator, or cybersecurity en
 - **RDP (Port 3389)** - Remote Desktop Protocol emulation
 - **HTTP Alternate (Port 8080)** - Alternative web server emulation
 
-### ⚙️ Advanced Options
+### Advanced Options
 - **Log Retention** - Automatic log archiving and cleanup
 - **Log File Size Limits** - Automatic honeypot stopping when logs exceed size limits
 - **Scheduled Scans** - Automatic honeypot startup at specified times
 - **Debug Mode** - Detailed logging for troubleshooting
 - **Configuration Management** - Easy configuration through GUI
 
-### 💾 Database & Reporting
+### Database & Reporting
 - **SQLite Database** - Persistent storage of all attacks and connections
 - **Detailed Attack Records** - Full payload capture and analysis
 - **Export Capabilities** - Export data for external analysis
 - **Statistics & Trends** - Visualize attack patterns over time
 
-## 📋 System Requirements
+## System Requirements
 
 - **OS**: Windows 7 or later (may work on Linux/macOS with modifications)
 - **Python**: 3.8 or higher
 - **RAM**: 512 MB minimum
 - **Disk Space**: 100 MB for installation + space for logs/database
 
-## 📦 Installation
+## Installation
 
 ### Option 1: Direct Download & Run
 
@@ -99,7 +99,7 @@ docker build -t speedpot .
 docker run -p 21:21 -p 22:22 -p 23:23 -p 25:25 -p 80:80 -p 443:443 -p 3389:3389 -p 8080:8080 speedpot
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Basic Usage
 
@@ -152,7 +152,7 @@ streamlit run dashboard.py
 
 Access at `http://localhost:8501` for real-time monitoring and IP management.
 
-## ⚙️ Configuration
+## Configuration
 
 Edit `config.json` to customize Speedpot:
 
@@ -167,7 +167,7 @@ Edit `config.json` to customize Speedpot:
 }
 ```
 
-## 🖥️ GUI Navigation
+## GUI Navigation
 
 ### Dashboard Tab
 - Real-time service status and connection counts
@@ -201,7 +201,7 @@ Edit `config.json` to customize Speedpot:
 - Debug mode toggle
 - Auto-block configuration
 
-## 🗄️ Database Structure
+## Database Structure
 
 Speedpot uses SQLite with the following main tables:
 
@@ -210,7 +210,7 @@ Speedpot uses SQLite with the following main tables:
 - **blocked_ips** - Blocked IP addresses and reasons
 - **port_scans** - Detected port scanning attempts
 
-## 🎯 Attack Patterns
+## Attack Patterns
 
 Speedpot detects the following attack patterns:
 
@@ -223,7 +223,7 @@ Speedpot detects the following attack patterns:
 | Port Scan | Rapid multi-port connections | Medium | Classify and track |
 | Scanner Detection | Known scanner user-agents | Medium/High | Classify and track |
 
-## 🔧 Common Troubleshooting
+## Common Troubleshooting
 
 ### Honeypot Won't Start
 - Ensure no other services are using the target ports
@@ -245,14 +245,14 @@ Speedpot detects the following attack patterns:
 - Check disk space availability
 - Ensure write permissions in the application directory
 
-## ⚡ Performance
+## Performance
 
 - **Connections per second**: ~1000+ (hardware dependent)
 - **Memory footprint**: ~50-100 MB at startup, grows with active connections
 - **Database size**: ~1 GB per ~100k attack records
 - **CPU**: Minimal usage at idle, spikes during port scans
 
-## ⚠️ Security Considerations
+## Security Considerations
 
 **Important**: Speedpot is designed to be attacked. However:
 
@@ -262,7 +262,7 @@ Speedpot detects the following attack patterns:
 4. **Log Cleanup** - Regularly archive and clean logs to prevent disk space issues
 5. **Network Monitoring** - Monitor bandwidth usage during port scans
 
-## 🤝 Contributing
+## Contributing
 
 I will always welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
@@ -281,32 +281,32 @@ pip install -r requirements-dev.txt
 - Documentation improvements
 - Bug fixes and testing
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [ ] Docker containerization
-- [ ] Multi-threaded improvements
-- [ ] Machine learning-based attack classification
+- [X] Multi-threaded improvements
+- [X] Machine learning-based attack classification
 - [ ] Integration with SIEM platforms
 - [ ] REST API for remote management
 - [ ] Multi-language support
 - [ ] Linux/macOS native support
 - [ ] Advanced threat intelligence integration
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 
-## ⚖️ Disclaimer
+## Disclaimer
 
 Speedpot is provided for educational and authorized security testing purposes only. Users are responsible for ensuring they have proper authorization to operate honeypots on their networks. Unauthorized access to computer systems is illegal.
 
-## 📞 Support
+## Support
 
-- 📖 **Documentation**: Check the docs/ folder
-- 🐛 **Bug Reports**: Open an issue on GitHub
-- 💬 **Discussions**: Use GitHub Discussions for questions
+- **Documentation**: Check the docs/ folder
+- **Bug Reports**: Open an issue on GitHub
+- **Discussions**: Use GitHub Discussions for questions
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built with Python and Tkinter
 - Database management with SQLite
