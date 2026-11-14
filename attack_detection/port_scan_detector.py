@@ -20,16 +20,19 @@ X: `*88888%`     !    888I  888I 8888.+"    8888.+"     888E  888E    888I  888I
                                 Written by Tyler Bifolchi
                                         2024, 2025
 ---------------------------------------------------------------------------------------------------------
-"""
+
 #========================================================================================================
 # This file is specifically used to scan for port scans while the honeypot is running. I was originally
 # going to merge this with the attack detector, but thought it would be easier to include as its own file
 # since I really had to wrack my brain to figure out how to distinguish the differences. So far, this
 # detection has worked against Nmap and NetDiscover.
 #========================================================================================================
+File Last Examined: 08/22/2026
+"""
 
 import time
 import sqlite3
+from paths import PORT_SCANS_DB
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional
@@ -59,9 +62,8 @@ class PortScanDetector:
     
 
     def init_scan_db(self):
-        """Initialize port scan detection database"""
         try:
-            conn = sqlite3.connect('port_scans.db')         # All data is stored in port_scans.db
+            conn = sqlite3.connect(str(PORT_SCANS_DB))         # All data is stored in data/port_scans.db
             cursor = conn.cursor()
             
             # Table for individual connection attempts
@@ -103,7 +105,6 @@ class PortScanDetector:
 
     def record_connection_attempt(self, ip_address: str, port: int, 
                                 protocol: str = 'TCP', success: bool = False):
-        """Record a connection attempt and check for scanning patterns"""
         if not self.enabled:
             return None
         
@@ -112,7 +113,7 @@ class PortScanDetector:
         # Store in database
         # It will record connection attempts as they occur
         try:
-            conn = sqlite3.connect('port_scans.db')
+            conn = sqlite3.connect(str(PORT_SCANS_DB))
             cursor = conn.cursor()
             cursor.execute('''
                 INSERT INTO connection_attempts 
@@ -144,7 +145,6 @@ class PortScanDetector:
     
 
     def _analyze_scan_pattern(self, ip_address: str) -> Optional[Dict]:
-        """Analyze connection patterns to detect port scanning"""
         connections = self.connection_tracker[ip_address]
         current_time = datetime.now()
         
@@ -197,7 +197,6 @@ class PortScanDetector:
     
 
     def _classify_scan_type(self, connections: List[Dict]) -> str:
-        """Classify the type of port scan based on connection patterns"""
         ports = [conn['port'] for conn in connections]
         unique_ports = set(ports)
         
@@ -230,7 +229,6 @@ class PortScanDetector:
     
 
     def _assess_threat_level(self, connections: List[Dict]) -> str:
-        """Assess threat level based on scan characteristics"""
         unique_ports = len(set(conn['port'] for conn in connections))
         total_attempts = len(connections)
         success_rate = sum(1 for conn in connections if conn['success']) / total_attempts
@@ -258,7 +256,7 @@ class PortScanDetector:
         elif scan_speed > 10:
             score += 10
         
-        # Success rate (successful connections might indicate vulnerability)
+        # Success rate (successful connections might indicate vulnerability and/or insecurity)
         if success_rate > 0.1:
             score += 20
         elif success_rate > 0.05:
@@ -284,9 +282,8 @@ class PortScanDetector:
     
 
     def _store_detected_scan(self, scan_result: Dict):
-        """Store detected port scan in database"""
         try:
-            conn = sqlite3.connect('port_scans.db')
+            conn = sqlite3.connect(str(PORT_SCANS_DB))
             cursor = conn.cursor()
             cursor.execute('''
                 INSERT INTO detected_scans 
@@ -310,9 +307,8 @@ class PortScanDetector:
     
 
     def get_scan_statistics(self, hours: int = 24) -> Dict:
-        """Get port scan statistics for the specified time period"""
         try:
-            conn = sqlite3.connect('port_scans.db')
+            conn = sqlite3.connect(str(PORT_SCANS_DB))
             cursor = conn.cursor()
             
             cutoff_time = datetime.now() - timedelta(hours=hours)
@@ -366,9 +362,8 @@ class PortScanDetector:
     
 
     def get_recent_scans(self, limit: int = 50) -> List[Dict]:
-        """Get recent port scan detections"""
         try:
-            conn = sqlite3.connect('port_scans.db')
+            conn = sqlite3.connect(str(PORT_SCANS_DB))
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT * FROM detected_scans 
@@ -392,12 +387,10 @@ class PortScanDetector:
     
 
     def is_known_scanner(self, ip_address: str) -> bool:
-        """Check if IP is a known scanner based on historical data"""
         return self.scan_alerts.get(ip_address, 0) >= self.alert_threshold
     
     
     def _cleanup_old_entries(self):
-        """Background thread to clean up old tracking data"""
         while True:
             try:
                 current_time = datetime.now()
@@ -416,7 +409,7 @@ class PortScanDetector:
                             del self.connection_tracker[ip_address]
                 
                 # Clean up database (keep last 30 days)
-                conn = sqlite3.connect('port_scans.db')
+                conn = sqlite3.connect(str(PORT_SCANS_DB))
                 cursor = conn.cursor()
                 cutoff_date = current_time - timedelta(days=30)
                 

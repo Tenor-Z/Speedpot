@@ -15,5 +15,53 @@
         "TIME_WINDOW_SECONDS": 60,
         "PORT_THRESHOLD": 5,
         "ALERT_THRESHOLD": 10
+    },
+    "ALERTS": {
+        "ENABLED": true,
+        "EMAIL": {
+            "enabled": false,
+            "smtp_server": "",
+            "smtp_port": 587,
+            "use_tls": true,
+            "username": "",
+            "password": "",
+            "sender": "",
+            "recipients": []
+        },
+        "DISCORD": {
+            "enabled": true,
+            "webhook_url": "https://discordapp.com/api/webhooks/1512274529609711687/A6LAN7RwwjmW2TyrcI2Ib8nW8_WwwnQTCEZ1WNDyz0qEqepnZYbihlyp-l8aw5QWZXJT"
+        },
+        "SLACK": {
+            "enabled": false,
+            "webhook_url": ""
+        },
+        "TELEGRAM": {
+            "enabled": false,
+            "bot_token": "",
+            "chat_id": ""
+        },
+        "CUSTOM_WEBHOOK": {
+            "enabled": false,
+            "url": "",
+            "method": "POST",
+            "headers": {}
+        },
+        "TRIGGERS": {
+            "on_attack": true,
+            "on_critical_attack": true,
+            "on_block": true,
+            "on_port_scan": true,
+            "on_new_ip": false,
+            "min_severity": "Medium"
+        },
+        "RATE_LIMIT": {
+            "max_alerts_per_minute": 10,
+            "cooldown_seconds": 60
+        }
+    },
+    "GEOIP": {
+        "ENABLED": true,
+        "DATABASE_PATH": "GeoLite2-Country.mmdb"
     }
 }

@@ -18,21 +18,30 @@ X: `*88888%`     !    888I  888I 8888.+"    8888.+"     888E  888E    888I  888I
             01010011 01110000 01100101 01100101 01100100 01110000 01101111 01110100
                                         Speedpot
                                 Written by Tyler Bifolchi
-                                        2024, 2025
+                                    2024, 2025, 2026
 ---------------------------------------------------------------------------------------------------------
-"""
+
 #========================================================================================================
 # This file contains everything that is used and displayed on the Options menu in the Dashboard tab.
 # This was one of the very first files created for the program, and although it still can contain multiple
 # settings, future builds will add new features and enhance the existing ones. API keys can also be
 # configured in this menu.
 #========================================================================================================
+File Last Examined: 08/20/2026
+"""
 
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk, simpledialog
 import json
 import os
 import getpass
+
+# NEW v1.5: configuration profile support
+try:
+    from config import list_profiles, apply_profile, save_profile, get_current_profile_name
+    PROFILES_AVAILABLE = True
+except Exception:
+    PROFILES_AVAILABLE = False
 
 # Path to the configuration file
 CONFIG_FILE = "config.json"
@@ -41,6 +50,7 @@ KEYS_FILE = os.path.join(KEYS_DIR, "api_keys.json") # API keys location
 DEBUG_MODE = False
 
 # Only exists just to make debug mode truly global
+# It works for now so I'll keep it
 def set_debug_mode(value):
     global DEBUG_MODE
     DEBUG_MODE = value
@@ -51,13 +61,11 @@ def get_debug_mode():
 
 
 def ensure_keys_directory():
-    """Ensure the keys directory exists"""
     if not os.path.exists(KEYS_DIR):
         os.makedirs(KEYS_DIR)
 
 
 def load_api_keys():
-    """Load API keys from the keys file"""
     ensure_keys_directory()
     
     if not os.path.exists(KEYS_FILE):
@@ -71,7 +79,6 @@ def load_api_keys():
 
 
 def save_api_keys(keys):
-    """Save API keys to the keys file"""
     ensure_keys_directory()
     with open(KEYS_FILE, 'w') as f:
         json.dump(keys, f, indent=4)
@@ -84,6 +91,7 @@ def load_config():
             return json.load(file)
     else:
         # Default configuration
+        # just in case a customized one doesn't exist
         return {"LOG_SIZE_MB": 5, "SCAN_SCHEDULE": "12:00", "LOG_RETENTION_DAYS": 30, "DEBUG_MODE": False}
 
 
@@ -97,7 +105,7 @@ config = load_config()
 
 
 def display_credsbox():
-    messagebox.showinfo("Speedpot", "Created in 2024 by Tyler Bifolchi (Tenor-Z) https://github.com/Tenor-Z/Speedpot")
+    messagebox.showinfo("Speedpot", "Version 1.5\nCreated in 2024-2026 by Tyler Bifolchi (Tenor-Z) https://github.com/Tenor-Z/Speedpot")
 
 # The API key configuration window setup
 class APIKeyWindow(tk.Toplevel):
@@ -164,7 +172,6 @@ class APIKeyWindow(tk.Toplevel):
     
 
     def save_keys(self):
-        """Save the API keys"""
         keys = {
             "abuseipdb_api_key": self.abuseipdb_entry.get().strip(),
             "virustotal_api_key": self.virustotal_entry.get().strip()
@@ -179,7 +186,6 @@ class APIKeyWindow(tk.Toplevel):
     
 
     def test_keys(self):
-        """Test the API keys"""
         abuseipdb_key = self.abuseipdb_entry.get().strip()
         virustotal_key = self.virustotal_entry.get().strip()
         
@@ -187,6 +193,7 @@ class APIKeyWindow(tk.Toplevel):
         
         if abuseipdb_key:
             # Simple validation. Just check if it looks like a valid key
+            # Obviously will have to be enhanced
             if len(abuseipdb_key) >= 20:
                 results.append("✓ AbuseIPDB key format appears valid")
             else:
@@ -240,6 +247,38 @@ class OptionsWindow(tk.Toplevel):
                                         bg="#FF9800", fg="white", font=("Arial", 10, "bold"))
         self.api_keys_button.pack(pady=10)
 
+        # NEW v1.5: Configuration profile switcher
+        if PROFILES_AVAILABLE:
+            profile_frame = tk.LabelFrame(self, text="Configuration Profiles",
+                                          font=("Arial", 10, "bold"))
+            profile_frame.pack(fill=tk.X, padx=20, pady=10)
+
+            self.profiles = list_profiles()
+            profile_labels = [f"{p['name']} - {p['description']}" for p in self.profiles]
+
+            current_profile = get_current_profile_name()
+            self.active_profile_var = tk.StringVar(value=f"Active profile: {current_profile}")
+            tk.Label(profile_frame, textvariable=self.active_profile_var,
+                     font=("Arial", 9, "italic")).pack(anchor=tk.W, padx=5, pady=(5, 0))
+            tk.Label(profile_frame, text="Select a profile:").pack(anchor=tk.W, padx=5, pady=(5, 0))
+            self.profile_combo = ttk.Combobox(profile_frame, values=profile_labels,
+                                              state="readonly", width=50)
+            if profile_labels:
+                selected_index = next(
+                    (i for i, profile in enumerate(self.profiles)
+                     if profile['name'].lower() == current_profile.lower()),
+                    0
+                )
+                self.profile_combo.current(selected_index)
+            self.profile_combo.pack(fill=tk.X, padx=5, pady=5)
+
+            profile_btns = tk.Frame(profile_frame)
+            profile_btns.pack(pady=5)
+            tk.Button(profile_btns, text="Apply Profile", command=self.apply_selected_profile,
+                      bg="#4CAF50", fg="white", font=("Arial", 9, "bold"), width=14).pack(side=tk.LEFT, padx=5)
+            tk.Button(profile_btns, text="Save Current as Profile", command=self.save_current_profile,
+                      bg="#2196F3", fg="white", font=("Arial", 9, "bold"), width=20).pack(side=tk.LEFT, padx=5)
+
         self.start_button = tk.Button(self, text="Credits", command=display_credsbox)
         self.start_button.pack(pady=5)
 
@@ -249,10 +288,80 @@ class OptionsWindow(tk.Toplevel):
 
 
     def open_api_key_window(self):
-        """Open the API key configuration window"""
         api_window = APIKeyWindow(self)
         api_window.grab_set()  # Make it modal
         self.wait_window(api_window)  # Wait until closed
+
+
+    def apply_selected_profile(self):
+        """NEW v1.5: Apply the selected configuration profile to config.json"""
+        if not self.profiles:
+            messagebox.showwarning("No Profiles", "No configuration profiles were found.")
+            return
+
+        index = self.profile_combo.current()
+        if index < 0:
+            messagebox.showwarning("No Selection", "Please select a profile first.")
+            return
+
+        profile = self.profiles[index]
+        confirm = messagebox.askyesno(
+            "Apply Profile",
+            f"Apply the '{profile['name']}' profile?\n\n"
+            f"{profile['description']}\n\n"
+            "This will overwrite the matching settings in config.json.\n"
+            "Restart the honeypot for changes to fully take effect.")
+        if not confirm:
+            return
+
+        try:
+            if apply_profile(profile['profile_id']):
+                # Reload the module-level config so the window reflects new values
+                global config
+                config = load_config()
+                messagebox.showinfo("Profile Applied",
+                                    f"Profile '{profile['name']}' applied successfully!\n"
+                                    "Restart the honeypot to apply all changes.")
+            else:
+                messagebox.showerror("Error", "Failed to apply the selected profile.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to apply profile: {e}")
+
+
+    def refresh_option_fields(self, new_config):
+        fields = (
+            (self.log_size_entry, new_config.get("LOG_SIZE_MB", 5)),
+            (self.scan_schedule_entry, new_config.get("SCAN_SCHEDULE", "12:00")),
+            (self.log_retention_entry, new_config.get("LOG_RETENTION_DAYS", 30)),
+        )
+        for widget, value in fields:
+            widget.delete(0, tk.END)
+            widget.insert(0, str(value))
+        self.debug_mode_var.set(bool(new_config.get("DEBUG_MODE", False)))
+
+
+    def save_current_profile(self):
+        """NEW v1.5: Save the current configuration as a new named profile"""
+        name = simpledialog.askstring("Save Profile",
+                                      "Enter a name for this profile:", parent=self)
+        if not name:
+            return
+
+        description = simpledialog.askstring("Profile Description",
+                                             "Enter a short description (optional):",
+                                             parent=self) or "Custom profile"
+        try:
+            current = load_config()
+            if save_profile(name, current, description):
+                self.profiles = list_profiles()
+                self.profile_combo['values'] = [
+                    f"{p['name']} - {p['description']}" for p in self.profiles]
+                messagebox.showinfo("Profile Saved",
+                                    f"Profile '{name}' saved successfully!")
+            else:
+                messagebox.showerror("Error", "Failed to save the profile.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save profile: {e}")
 
 
     def save_options(self):

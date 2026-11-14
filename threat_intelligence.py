@@ -18,20 +18,26 @@ X: `*88888%`     !    888I  888I 8888.+"    8888.+"     888E  888E    888I  888I
             01010011 01110000 01100101 01100101 01100100 01110000 01101111 01110100
                                         Speedpot
                                 Written by Tyler Bifolchi
-                                        2024, 2025
+                                    2024, 2025, 2026
 ---------------------------------------------------------------------------------------------------------
-"""
+
 #========================================================================================================
 # This is the file that is used mostly to communicate with supported abuse databases such as AbuseDB and
 # VirusTotal for more enhanced results. They further help cement discoveries made by the honeypot and 
 # allow for a more thorough gathering of information of offending IP addresses and the attacks that are
 # performed.
+#
+# This is separate from the program's own threat database, which contains detection and prevention
+# mechanisms for various activities against the emulated services such as SQL injections and port sweeping
 #========================================================================================================
+File Last Examined: 08/19/2026
+"""
 
 import requests
 import json
 import time
 import hashlib
+from paths import THREAT_CACHE_DB
 from datetime import datetime, timedelta
 from typing import Dict, Optional, List
 import sqlite3
@@ -56,9 +62,8 @@ class ThreatIntelligence:
 
 
     def init_cache_db(self):
-        """Initialize threat intelligence cache database"""
         try:
-            conn = sqlite3.connect('threat_cache.db')
+            conn = sqlite3.connect(str(THREAT_CACHE_DB))
             cursor = conn.cursor()
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS threat_cache (
@@ -79,10 +84,10 @@ class ThreatIntelligence:
     
     # I plan on making a recovery program that can fix corrupted database files in the future
     # though I'm not sure when this will take place
+
     def is_cache_valid(self, ip_address: str) -> bool:
-        """Check if cached data is still valid"""
         try:
-            conn = sqlite3.connect('threat_cache.db')
+            conn = sqlite3.connect(str(THREAT_CACHE_DB))
             cursor = conn.cursor()
             cursor.execute(
                 'SELECT last_updated FROM threat_cache WHERE ip_address = ?',
@@ -101,9 +106,8 @@ class ThreatIntelligence:
     
 
     def get_cached_data(self, ip_address: str) -> Optional[Dict]:
-        """Retrieve cached threat intelligence data"""
         try:
-            conn = sqlite3.connect('threat_cache.db')
+            conn = sqlite3.connect(str(THREAT_CACHE_DB))
             cursor = conn.cursor()
             cursor.execute(
                 'SELECT * FROM threat_cache WHERE ip_address = ?',
@@ -130,9 +134,8 @@ class ThreatIntelligence:
     
 
     def cache_data(self, ip_address: str, data: Dict):
-        """Cache threat intelligence data"""
         try:
-            conn = sqlite3.connect('threat_cache.db')
+            conn = sqlite3.connect(str(THREAT_CACHE_DB))
             cursor = conn.cursor()
             cursor.execute('''
                 INSERT OR REPLACE INTO threat_cache 
@@ -156,7 +159,6 @@ class ThreatIntelligence:
     
 
     def check_abuseipdb(self, ip_address: str) -> Dict:
-        """Check IP against AbuseIPDB"""
         if not self.abuseipdb_key:
             return {'score': 0, 'country_code': '', 'isp': '', 'error': 'No API key configured'}
         
@@ -193,7 +195,6 @@ class ThreatIntelligence:
     
 
     def check_virustotal(self, ip_address: str) -> Dict:
-        """Check IP against VirusTotal"""
         if not self.virustotal_key:
             return {'score': 0, 'error': 'No API key configured'}
         
@@ -229,10 +230,8 @@ class ThreatIntelligence:
             logging.error(f"VirusTotal API error: {e}")
             return {'score': 0, 'error': str(e)}
     
-    # This function has only been tested on home networks, so some fields like country_code and ISP may or may not work
 
     def analyze_ip(self, ip_address: str) -> Dict:
-        """Comprehensive IP analysis using multiple threat intelligence sources"""
         if not self.enabled:
             return {
                 'enabled': False, 
@@ -280,7 +279,6 @@ class ThreatIntelligence:
     
 
     def get_threat_level(self, score: int) -> str:
-        """Convert numeric score to threat level"""
         if score >= 75:
             return 'HIGH'
         elif score >= 50:
@@ -292,7 +290,6 @@ class ThreatIntelligence:
     
 
     def bulk_analyze(self, ip_addresses: List[str]) -> Dict[str, Dict]:
-        """Analyze multiple IPs with rate limiting"""
         results = {}
         for ip in ip_addresses:
             results[ip] = self.analyze_ip(ip)
@@ -301,9 +298,8 @@ class ThreatIntelligence:
     
     
     def cleanup_cache(self, days_old: int = 7):
-        """Clean up old cache entries"""
         try:
-            conn = sqlite3.connect('threat_cache.db')
+            conn = sqlite3.connect(str(THREAT_CACHE_DB))
             cursor = conn.cursor()
             cutoff_date = datetime.now() - timedelta(days=days_old)
             cursor.execute(

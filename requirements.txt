@@ -21,3 +21,10 @@ pytest-cov>=4.1.0
 
 # Utilities
 python-dateutil>=2.8.2
+
+# ==================== v1.5 ADDITIONS ====================
+
+# GeoIP Support (Optional - for country-based IP geolocation)
+geoip2>=4.7.0
+# Note: Requires GeoLite2-Country.mmdb database from MaxMind
+# Download from: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data

@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Runtime data and logs
+data/*.db
+logs/*.log
+exports/*
+!exports/.gitkeep
+
+# Secrets and optional licensed/downloaded data
+keys/api_keys.json
+GeoLite2-Country.mmdb
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

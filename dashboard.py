@@ -18,14 +18,16 @@ X: `*88888%`     !    888I  888I 8888.+"    8888.+"     888E  888E    888I  888I
             01010011 01110000 01100101 01100101 01100100 01110000 01101111 01110100
                                         Speedpot
                                 Written by Tyler Bifolchi
-                                        2024, 2025
+                                    2024, 2025, 2026
 ---------------------------------------------------------------------------------------------------------
-"""
+
 #========================================================================================================
 # This is a work in process as an alternative web-based dashboard interface for Speedpot built with Streamlit. 
 # It provides a browser-based visualization and management interface that runs separately from the main Tkinter GUI.
 # There are still issues with this interface and such will be a primary point of focus in later updates
 #========================================================================================================
+File Last Examined: 08/22/2026
+"""
 
 import streamlit as st
 import pandas as pd

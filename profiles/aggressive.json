@@ -1,0 +1,30 @@
+{
+    "name": "Aggressive",
+    "description": "High sensitivity detection with all alerts enabled - catches more threats but may have more false positives",
+    "LOG_SIZE_MB": 100,
+    "SCAN_SCHEDULE": "00:00",
+    "LOG_RETENTION_DAYS": 30,
+    "DEBUG_MODE": false,
+    "THREAT_INTELLIGENCE": {
+        "ENABLED": true,
+        "CACHE_DURATION_HOURS": 12,
+        "CHECK_THRESHOLD": 1
+    },
+    "PORT_SCAN_DETECTION": {
+        "ENABLED": true,
+        "TIME_WINDOW_SECONDS": 30,
+        "PORT_THRESHOLD": 3,
+        "ALERT_THRESHOLD": 5
+    },
+    "ALERTS": {
+        "ENABLED": true,
+        "TRIGGERS": {
+            "on_attack": true,
+            "on_critical_attack": true,
+            "on_block": true,
+            "on_port_scan": true,
+            "on_new_ip": true,
+            "min_severity": "Low"
+        }
+    }
+}

@@ -1,0 +1,33 @@
+{
+    "name": "Research",
+    "description": "Maximum data collection for threat research - extended retention and verbose logging for analysis",
+    "LOG_SIZE_MB": 500,
+    "SCAN_SCHEDULE": "00:00",
+    "LOG_RETENTION_DAYS": 90,
+    "DEBUG_MODE": true,
+    "THREAT_INTELLIGENCE": {
+        "ENABLED": true,
+        "CACHE_DURATION_HOURS": 6,
+        "CHECK_THRESHOLD": 1
+    },
+    "PORT_SCAN_DETECTION": {
+        "ENABLED": true,
+        "TIME_WINDOW_SECONDS": 60,
+        "PORT_THRESHOLD": 3,
+        "ALERT_THRESHOLD": 5
+    },
+    "ALERTS": {
+        "ENABLED": true,
+        "TRIGGERS": {
+            "on_attack": true,
+            "on_critical_attack": true,
+            "on_block": true,
+            "on_port_scan": true,
+            "on_new_ip": true,
+            "min_severity": "Low"
+        }
+    },
+    "GEOIP": {
+        "ENABLED": true
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "name": "Stealth",
+    "description": "Minimal logging and no external alerts - for covert deployments where low footprint is needed",
+    "LOG_SIZE_MB": 10,
+    "SCAN_SCHEDULE": "03:00",
+    "LOG_RETENTION_DAYS": 3,
+    "DEBUG_MODE": false,
+    "THREAT_INTELLIGENCE": {
+        "ENABLED": false
+    },
+    "PORT_SCAN_DETECTION": {
+        "ENABLED": true,
+        "TIME_WINDOW_SECONDS": 120,
+        "PORT_THRESHOLD": 10,
+        "ALERT_THRESHOLD": 20
+    },
+    "ALERTS": {
+        "ENABLED": false
+    }
+}

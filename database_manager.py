@@ -18,14 +18,16 @@ X: `*88888%`     !    888I  888I 8888.+"    8888.+"     888E  888E    888I  888I
             01010011 01110000 01100101 01100101 01100100 01110000 01101111 01110100
                                         Speedpot
                                 Written by Tyler Bifolchi
-                                        2024, 2025
+                                    2024, 2025, 2026
 ---------------------------------------------------------------------------------------------------------
-"""
+
 #========================================================================================================
 # This is the main database manager for Speedpot, as it manages both the core database files of the program
 # as well as any tables and JSON files used for frivilous configurations, such as debug mode. By far, the
-# most complex part of the program as of writing this, too many hours spent on this build.
+# most complex part of the program as of writing this, too many hours spent on this and many more to come.
 #========================================================================================================
+File Last Examined: 08/20/2026
+"""
 
 import sqlite3
 import logging
@@ -33,19 +35,30 @@ import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 import threading
+from paths import HONEYPOT_DB
+
+# v1.5: NEW - GeoIP Integration (optional)
+# Will import the module if everything is installed, though its not a requirement
+try:
+    from geoip_manager import lookup_country, get_geoip_manager
+    GEOIP_AVAILABLE = True
+except ImportError:
+    GEOIP_AVAILABLE = False
+    def lookup_country(ip): return (None, None)
+    def get_geoip_manager(): return None
 
 # Most configurations and analytics are stored in one primary database "honeypot.db"
 # This is easier than having seven different databases, and allows for the easy access of pretty much everything through one file
 # As this project gets updated, this database will be stored in a more secure place, potentially even encrypted for additional security
 
 class DatabaseManager:
-    def __init__(self, db_path: str = 'honeypot.db'):
+    def __init__(self, db_path: str = str(HONEYPOT_DB)):
         self.db_path = db_path
         self.lock = threading.Lock()
         self.init_database()
     
     def init_database(self):
-        """Initialize the enhanced honeypot database with all required tables"""
+
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
@@ -53,7 +66,7 @@ class DatabaseManager:
                 
                 # Main connections table - enhanced with threat intelligence
                 # Some fields like country_code and isp are still being worked on, so
-                # they might not work.
+                # they might not work accurately.
                 
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS connections (
@@ -81,7 +94,7 @@ class DatabaseManager:
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_connections_is_malicious ON connections(is_malicious)')
                 
                 # Threat intelligence cache table
-                # Same issues apply with this table
+                # Same aspects apply with this table
 
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS threat_intelligence (
@@ -126,6 +139,7 @@ class DatabaseManager:
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_port_scans_threat_level ON port_scans(threat_level)')
                 
                 # Blocked IPs table with enhanced tracking
+                # Responsible for maintaining info on blocked IPs and how long they remain banned for.
 
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS blocked_ips (
@@ -197,6 +211,7 @@ class DatabaseManager:
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_config_history_key_changed ON config_history(config_key, changed_at)')
                 
                 # Detected attacks table
+                # Keeps track of the attack type, payload samples, severity and any matched patterns
                 
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS detected_attacks (
@@ -228,14 +243,19 @@ class DatabaseManager:
     
     # Here whenever a connection needs to be logged (i.e., saved to the application at rest)
     # This runs whenever a connection is established on any of the simulated services
-    # This hasn't been tested outside of private networks
 
     def log_connection(self, connection_data: Dict) -> int:
-        """Log a connection attempt with enhanced data"""
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
                 cursor = conn.cursor()
+                
+                # v1.5: Auto-populate country_code via GeoIP if not provided
+                country_code = connection_data.get('country_code')
+                if not country_code and GEOIP_AVAILABLE:
+                    ip_address = connection_data.get('ip_address')
+                    if ip_address:
+                        country_code, _ = lookup_country(ip_address)
                 
                 cursor.execute('''
                     INSERT INTO connections 
@@ -254,7 +274,7 @@ class DatabaseManager:
                     connection_data.get('payload'),
                     connection_data.get('threat_score', 0),
                     connection_data.get('threat_level', 'UNKNOWN'),
-                    connection_data.get('country_code'),
+                    country_code,
                     connection_data.get('isp'),
                     connection_data.get('is_malicious', False),
                     connection_data.get('scan_detected', False),
@@ -274,7 +294,6 @@ class DatabaseManager:
     # These updates show up graphically on the application
 
     def update_threat_intelligence(self, ip_address: str, threat_data: Dict):
-        """Update or insert threat intelligence data"""
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
@@ -307,7 +326,6 @@ class DatabaseManager:
     # Logging port scans
 
     def log_port_scan(self, scan_data: Dict) -> int:
-        """Log a detected port scan"""
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
@@ -342,12 +360,11 @@ class DatabaseManager:
             logging.error(f"Failed to log port scan: {e}")
             return -1
     
-    # Function to block IP. Typically asks for input and then adds it to the list of blocked IP addresses
+    # The function to block IP. Typically asks for input and then adds it to the list of blocked IP addresses
     # It uses SQL to determine if such a block already exists and if not, add it to the tally
 
     def block_ip(self, ip_address: str, reason: str, duration_hours: Optional[int] = None, 
                  auto_blocked: bool = False, threat_score: int = 0) -> bool:
-        """Block an IP address with enhanced tracking"""
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
@@ -387,10 +404,10 @@ class DatabaseManager:
             return False
     
     # Just a simple function that determines if a provided IP address is blocked
+    # It runs periodically so that changes can be updated as soon as they occur.
     # It will also determine if said block has reached its expiration date
 
     def is_ip_blocked(self, ip_address: str) -> bool:
-        """Check if an IP address is currently blocked"""
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
@@ -424,9 +441,9 @@ class DatabaseManager:
     
     # This will unblock a selected IP
     # The process is much more simple
+    # Just remove its entry from the database and call it a day.
 
     def unblock_ip(self, ip_address: str) -> bool:
-        """Unblock an IP address"""
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
@@ -443,10 +460,10 @@ class DatabaseManager:
             return False
     
     # Function to view the list of blocked IPs
-    # Easiest way to access this list is through the graphical view
+    # Easiest way to access this list is through the graphical view, since that's where it will
+    # most likely be accessed by users
 
     def get_blocked_ips(self) -> List[Dict]:
-        """Get all currently blocked IP addresses"""
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
@@ -483,52 +500,58 @@ class DatabaseManager:
     
     # This obtains recent connection attempts
 
-    def get_recent_connections(self, limit: int = 100) -> List[Dict]:
-        """Get recent connection attempts"""
+    def get_recent_connections(self, limit: int = 100, days: Optional[int] = None) -> List[Dict]:
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
                 cursor = conn.cursor()
-                
-                cursor.execute('''
-                    SELECT ip_address, port, timestamp, protocol, success,
-                           threat_score, threat_level, country_code, isp,
-                           is_malicious, scan_detected
+
+                query = """
+                    SELECT id, ip_address, port, timestamp, protocol, success,
+                           os_fingerprint, user_agent, payload, threat_score,
+                           threat_level, country_code, isp, is_malicious,
+                           scan_detected, blocked
                     FROM connections
-                    ORDER BY timestamp DESC
-                    LIMIT ?
-                ''', (limit,))
-                
+                """
+                params = []
+                if days is not None:
+                    cutoff_time = (datetime.now() - timedelta(days=max(0, days))).isoformat()
+                    query += " WHERE timestamp >= ?"
+                    params.append(cutoff_time)
+                query += " ORDER BY timestamp DESC LIMIT ?"
+                params.append(limit)
+
+                cursor.execute(query, params)
                 rows = cursor.fetchall()
                 conn.close()
-                
-                connections = []
-                for row in rows:
-                    connections.append({
-                        'ip_address': row[0],
-                        'port': row[1],
-                        'timestamp': row[2],
-                        'protocol': row[3],
-                        'success': row[4],
-                        'threat_score': row[5],
-                        'threat_level': row[6],
-                        'country_code': row[7],
-                        'isp': row[8],
-                        'is_malicious': row[9],
-                        'scan_detected': row[10]
-                    })
-                
-                return connections
-                
+
+                return [{
+                    'id': row[0],
+                    'ip_address': row[1],
+                    'port': row[2],
+                    'timestamp': row[3],
+                    'protocol': row[4],
+                    'success': row[5],
+                    'os_fingerprint': row[6],
+                    'user_agent': row[7],
+                    'payload': row[8],
+                    'threat_score': row[9],
+                    'threat_level': row[10],
+                    'country_code': row[11],
+                    'isp': row[12],
+                    'is_malicious': row[13],
+                    'scan_detected': row[14],
+                    'blocked': row[15]
+                } for row in rows]
+
         except Exception as e:
             logging.error(f"Failed to get recent connections: {e}")
             return []
-    
+
     # Unlike the port scan logging, this just logs system events, such as open connections
 
     def log_system_event(self, event_type: str, severity: str, message: str, 
                         details: Optional[str] = None, ip_address: Optional[str] = None):
-        """Log a system event or alert"""
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
@@ -548,7 +571,6 @@ class DatabaseManager:
     
 
     def get_statistics(self, hours: int = 24) -> Dict:
-        """Get comprehensive honeypot statistics"""
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
@@ -606,7 +628,6 @@ class DatabaseManager:
     # manually flushing logs and honeypot activity
 
     def cleanup_old_data(self, days: int = 30):
-        """Clean up old data from all tables"""
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
@@ -651,7 +672,6 @@ class DatabaseManager:
     
 
     def log_detected_attack(self, attack_data: Dict) -> int:
-        """Log a detected attack pattern"""
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
@@ -684,36 +704,38 @@ class DatabaseManager:
             return -1
     
 
-    def get_detected_attacks(self, limit: int = 100, attack_type: Optional[str] = None) -> List[Dict]:
-        """Get detected attack patterns"""
+    def get_detected_attacks(self, limit: int = 100,
+                             attack_type: Optional[str] = None,
+                             days: Optional[int] = None) -> List[Dict]:
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)
                 cursor = conn.cursor()
-                
+
+                query = """
+                    SELECT id, connection_id, ip_address, port, attack_type,
+                           attack_severity, pattern_matched, payload_sample,
+                           description, timestamp
+                    FROM detected_attacks
+                """
+                conditions = []
+                params = []
                 if attack_type:
-                    cursor.execute('''
-                        SELECT id, connection_id, ip_address, port, attack_type,
-                               attack_severity, pattern_matched, payload_sample,
-                               description, timestamp
-                        FROM detected_attacks
-                        WHERE attack_type = ?
-                        ORDER BY timestamp DESC
-                        LIMIT ?
-                    ''', (attack_type, limit))
-                else:
-                    cursor.execute('''
-                        SELECT id, connection_id, ip_address, port, attack_type,
-                               attack_severity, pattern_matched, payload_sample,
-                               description, timestamp
-                        FROM detected_attacks
-                        ORDER BY timestamp DESC
-                        LIMIT ?
-                    ''', (limit,))
-                
+                    conditions.append("attack_type = ?")
+                    params.append(attack_type)
+                if days is not None:
+                    cutoff_time = (datetime.now() - timedelta(days=max(0, days))).isoformat()
+                    conditions.append("timestamp >= ?")
+                    params.append(cutoff_time)
+                if conditions:
+                    query += " WHERE " + " AND ".join(conditions)
+                query += " ORDER BY timestamp DESC LIMIT ?"
+                params.append(limit)
+
+                cursor.execute(query, params)
                 rows = cursor.fetchall()
                 conn.close()
-                
+
                 attacks = []
                 for row in rows:
                     attacks.append({
@@ -723,21 +745,99 @@ class DatabaseManager:
                         'port': row[3],
                         'attack_type': row[4],
                         'attack_severity': row[5],
+                        'severity': row[5],
                         'pattern_matched': row[6],
+                        'matched_pattern': row[6],
                         'payload_sample': row[7],
+                        'payload': row[7],
                         'description': row[8],
                         'timestamp': row[9]
                     })
-                
                 return attacks
-                
+
         except Exception as e:
             logging.error(f"Failed to get detected attacks: {e}")
             return []
-    
-    
+
+
+    def get_port_scans(self, days: Optional[int] = None,
+                       limit: int = 1000) -> List[Dict]:
+        try:
+            with self.lock:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                query = """
+                    SELECT id, ip_address, scan_type, ports_scanned, total_attempts,
+                           time_window_seconds, first_attempt, last_attempt,
+                           threat_level, ports_list, protocols, success_rate
+                    FROM port_scans
+                """
+                params = []
+                if days is not None:
+                    cutoff_time = (datetime.now() - timedelta(days=max(0, days))).isoformat()
+                    query += " WHERE first_attempt >= ?"
+                    params.append(cutoff_time)
+                query += " ORDER BY first_attempt DESC LIMIT ?"
+                params.append(limit)
+                cursor.execute(query, params)
+                rows = cursor.fetchall()
+                conn.close()
+
+                scans = []
+                for row in rows:
+                    scans.append({
+                        'id': row[0],
+                        'ip_address': row[1],
+                        'scan_type': row[2],
+                        'ports_scanned': row[3],
+                        'total_attempts': row[4],
+                        'time_window_seconds': row[5],
+                        'duration_seconds': row[5],
+                        'first_attempt': row[6],
+                        'timestamp': row[6],
+                        'last_attempt': row[7],
+                        'threat_level': row[8],
+                        'ports_list': row[9],
+                        'protocols': row[10],
+                        'success_rate': row[11]
+                    })
+                return scans
+        except Exception as e:
+            logging.error(f"Failed to get port scans: {e}")
+            return []
+
+    def get_threat_intelligence(self, limit: int = 1000) -> List[Dict]:
+        try:
+            with self.lock:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT ip_address, abuseipdb_score, virustotal_score,
+                           country_code, isp, usage_type, is_malicious,
+                           threat_level, last_updated, raw_data
+                    FROM threat_intelligence
+                    ORDER BY last_updated DESC
+                    LIMIT ?
+                """, (limit,))
+                rows = cursor.fetchall()
+                conn.close()
+                return [{
+                    'ip_address': row[0],
+                    'abuseipdb_score': row[1],
+                    'virustotal_score': row[2],
+                    'country_code': row[3],
+                    'isp': row[4],
+                    'usage_type': row[5],
+                    'is_malicious': row[6],
+                    'threat_level': row[7],
+                    'last_updated': row[8],
+                    'raw_data': row[9]
+                } for row in rows]
+        except Exception as e:
+            logging.error(f"Failed to get threat intelligence: {e}")
+            return []
+
     def get_attack_statistics(self, hours: int = 24) -> Dict:
-        """Get statistics about detected attacks"""
         try:
             with self.lock:
                 conn = sqlite3.connect(self.db_path)

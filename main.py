@@ -18,14 +18,16 @@ X: `*88888%`     !    888I  888I 8888.+"    8888.+"     888E  888E    888I  888I
             01010011 01110000 01100101 01100101 01100100 01110000 01101111 01110100
                                         Speedpot
                                 Written by Tyler Bifolchi
-                                        2024, 2025
+                                    2024, 2025, 2026
 ---------------------------------------------------------------------------------------------------------
-"""
+
 #========================================================================================================
 # The initial file of the program (as of this build)
 # Simply use 'python main.py' after installing the necessary requirement modules to run the application
 # This script will forward itself to the initial CLI setup utility of the program
 #========================================================================================================
+File Last Examined: 08/20/2026
+"""
 
 import tkinter as tk
 from gui import HoneypotGUI  # Import HoneypotGUI from the gui.py module

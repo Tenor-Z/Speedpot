@@ -18,19 +18,16 @@ X: `*88888%`     !    888I  888I 8888.+"    8888.+"     888E  888E    888I  888I
             01010011 01110000 01100101 01100101 01100100 01110000 01101111 01110100
                                         Speedpot
                                 Written by Tyler Bifolchi
-                                        2024, 2025
+                                    2024, 2025, 2026
 ---------------------------------------------------------------------------------------------------------
-"""
+
 #========================================================================================================
 # This file is the main GUI (graphical user interface) of Speedpot. It essentially contains all the 'visual'
 # elements of the honeypot, though the handling of databases and registered data is obtained elsewhere
 # i.e., see database manager.
-#
-# The main issue with this file is that it relies on too many Python modules, which can make installation
-# a tad difficult. To fix this, I will either implement a simple requirements.txt file that users can use
-# to install dependencies or a graphical setup wizard that doubles as a reliable source to place everything
-# where it should be ideally.
 #========================================================================================================
+File Last Examined: 08/21/2026
+"""
 
 import tkinter as tk
 from tkinter import scrolledtext, PhotoImage, ttk
@@ -54,15 +51,23 @@ from options import CONFIG_FILE
 # Pull what we need from adjacent files, including the threat intelligence system and database manager
 
 from threat_intelligence import ThreatIntelligence
-from port_scan_detector import PortScanDetector
+from attack_detection import PortScanDetector
 from database_manager import DatabaseManager
-from attack_detector import AttackDetector
+from attack_detection import AttackDetector
+
+# NEW v1.5: feature modules
+from alerts import AlertManager
+from export_manager import ExportManager
+from alerts import AlertsSettingsWindow
+import geoip_manager
+from tkinter import filedialog
+from paths import HONEYPOT_LOG
 
 retention_days = config.LOG_RETENTION
 
 # Set up logging
 
-logging.basicConfig(filename='honeypot.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+logging.basicConfig(filename=str(HONEYPOT_LOG), level=logging.INFO, format='%(asctime)s - %(message)s')
 
 # Server configuration
 # This is pulled from config.py
@@ -108,6 +113,7 @@ DEBUG_MODE = config.get("DEBUG_MODE", False)  # Get debug mode setting from conf
 # Handle with care ;)
 
 class HoneypotGUI:
+
     def __init__(self, root, HOST, PORT):
         self.root = root
         self.host = HOST
@@ -125,6 +131,21 @@ class HoneypotGUI:
         self.threat_intel = ThreatIntelligence(config)
         self.port_scanner = PortScanDetector(config)
         self.attack_detector = AttackDetector()
+
+        # NEW v1.5: Alerts, export, and GeoIP managers
+        try:
+            self.alert_manager = AlertManager()  # Auto-loads ALERTS config from config.json
+        except Exception as e:
+            self.alert_manager = None
+            logging.error(f"Failed to initialize AlertManager: {e}")
+
+        try:
+            self.export_manager = ExportManager(self.db_manager)
+        except Exception as e:
+            self.export_manager = None
+            logging.error(f"Failed to initialize ExportManager: {e}")
+
+        self.geoip = geoip_manager.get_geoip_manager()
 
         self.blocked_ips = []  # List to store blocked IP addresses
         self.captured_ips = []  # List to store captured IPs
@@ -174,6 +195,7 @@ class HoneypotGUI:
             "NEW: Configure threat intelligence API keys in the Options menu to get real-time threat data from AbuseIPDB and VirusTotal APIs.",
             "NEW: Port scan detection automatically identifies reconnaissance attempts and can auto-block suspicious IPs.",
             "NEW: View comprehensive threat statistics and attack patterns in the new Security Dashboard."
+            "NEW: After applying alerts, they may take a while to begin taking effect. You can also restart the program to refresh these settings."
         ]
 
         retention_days = self.config.get("LOG_RETENTION_DAYS", 30)
@@ -188,7 +210,6 @@ class HoneypotGUI:
 
 
     def create_header(self):
-        """Create the header with logo, title, and status"""
         header_frame = tk.Frame(self.root, bg="white", height=120)
         header_frame.pack(fill=tk.X)
         header_frame.pack_propagate(False)
@@ -223,8 +244,7 @@ class HoneypotGUI:
 
 
     def create_marquee(self):
-        """Create the scrolling marquee for update notes"""
-        self.marquee_text = "Update Notes: v1.4 - Added advanced attack detection and analytics dashboard. ---- Update Notes: v1.4 - Added email alerts and notification system. ---- Update Notes: v1.4 - Enhanced threat intelligence integration. ----"
+        self.marquee_text = "Update Notes: v.1.5 - Introducing the new Profiles system, allowing for a full customizable operating experience. ---- Update Notes: v.1.5 - Implemented webhook capabilities for forwarding security alerts. ---- Update Notes: v.1.5 - Added integration with GeoIP for IP address geolocation capabilities ---- Update Notes: v1.5 - Added an export feature with both JSON and CSV capabilities. ---- Update Notes: v1.5 - Added enhanced attack detection against various threats. ---- Update Notes: v1.4 - Added advanced attack detection and analytics dashboard. ---- Update Notes: v1.4 - Added email alerts and notification system. ---- Update Notes: v1.4 - Enhanced threat intelligence integration. ----"
         self.marquee_frame = tk.Frame(self.root, bg="#333333", height=30)
         self.marquee_frame.pack(fill=tk.X)
         self.marquee_frame.pack_propagate(False)
@@ -237,7 +257,6 @@ class HoneypotGUI:
 
 
     def create_tabs(self):
-        """Create the main tabbed interface"""
         # Create notebook for tabs
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
@@ -251,7 +270,6 @@ class HoneypotGUI:
 
 
     def create_dashboard_tab(self):
-        """Create the main dashboard tab"""
         dashboard_frame = ttk.Frame(self.notebook)
         self.notebook.add(dashboard_frame, text="Dashboard")
         
@@ -333,7 +351,6 @@ class HoneypotGUI:
 
 
     def create_recent_attacks_tab(self):
-        """Create the recent attacks tab"""
         attacks_frame = ttk.Frame(self.notebook)
         self.notebook.add(attacks_frame, text="Recent Attacks")
         
@@ -355,7 +372,6 @@ class HoneypotGUI:
 
 
     def create_controls_tab(self):
-        """Create the controls tab"""
         controls_frame = ttk.Frame(self.notebook)
         self.notebook.add(controls_frame, text="Controls")
         
@@ -404,25 +420,153 @@ class HoneypotGUI:
                  command=self.apply_service_changes,
                  bg="#4CAF50", fg="white", font=("Arial", 10, "bold")).pack(pady=10)
         
-        # Control buttons
+        # Control buttons are arranged in two columns so every action remains
+        # visible on smaller displays and at higher Windows scaling levels.
         button_frame = tk.Frame(controls_frame)
-        button_frame.pack(pady=20)
-        
-        tk.Button(button_frame, text="Security Dashboard", command=self.open_security_dashboard, 
-                 bg="#2196F3", fg="white", font=("Arial", 12, "bold"), width=20).pack(pady=10)
-        
-        tk.Button(button_frame, text="Threat Analysis", command=self.open_threat_analysis, 
-                 bg="#FF9800", fg="white", font=("Arial", 12, "bold"), width=20).pack(pady=10)
-        
-        tk.Button(button_frame, text="View Detected Attacks", command=self.view_detected_attacks, 
-                 bg="#E91E63", fg="white", font=("Arial", 12, "bold"), width=20).pack(pady=10)
-        
-        tk.Button(button_frame, text="View Captured IPs", command=self.view_captured_ips, 
-                 font=("Arial", 12, "bold"), width=20).pack(pady=10)
+        button_frame.pack(pady=12)
+
+        action_buttons = [
+            ("Security Dashboard", self.open_security_dashboard, "#2196F3", "white"),
+            ("Threat Analysis", self.open_threat_analysis, "#FF9800", "white"),         # colors are kind of ugly, but
+            ("View Detected Attacks", self.view_detected_attacks, "#E91E63", "white"),  # it works for now
+            ("View Captured IPs", self.view_captured_ips, None, None),
+            ("Alert Settings", self.open_alerts_settings, "#9C27B0", "white"),
+            ("Export Data", self.open_export_window, "#009688", "white"),
+        ]
+
+        for index, (label, command, background, foreground) in enumerate(action_buttons):
+            options = {
+                "text": label,
+                "command": command,
+                "font": ("Arial", 11, "bold"),
+                "width": 21,
+            }
+            if background:
+                options["bg"] = background
+            if foreground:
+                options["fg"] = foreground
+
+            tk.Button(button_frame, **options).grid(
+                row=index // 2,
+                column=index % 2,
+                padx=8,
+                pady=6,
+                sticky="ew",
+            )
+
+
+    def open_alerts_settings(self):
+        try:
+            win = AlertsSettingsWindow(
+                self.root,
+                log_callback=self.update_log,
+                save_callback=self.reload_alert_settings,
+            )
+            win.grab_set()
+            self.update_log("[INFO] Alert settings window opened")
+        except Exception as e:
+            self.update_log(f"[ERROR] Failed to open alert settings: {str(e)}")
+            messagebox.showerror("Error", f"Could not open alert settings: {str(e)}")
+
+
+
+    def reload_alert_settings(self, alerts_config):
+        try:
+            if self.alert_manager is None:
+                self.alert_manager = AlertManager(alerts_config)
+            else:
+                self.alert_manager.update_config(alerts_config)
+            self.update_log("[INFO] Active alert configuration refreshed")
+        except Exception as exc:
+            self.update_log(f"[ERROR] Failed to refresh alert configuration: {exc}")
+
+    def open_export_window(self):
+        if not self.export_manager:
+            messagebox.showerror("Error", "Export manager is not available.")
+            return
+
+        export_window = tk.Toplevel(self.root)
+        export_window.title("Export Data")
+        export_window.geometry("460x520")
+        export_window.resizable(False, False)
+
+        tk.Label(export_window, text="Export Honeypot Data",
+                 font=("Arial", 14, "bold")).pack(pady=12)
+
+        # Days selector
+        # Data has to have been collected in the provided range of days in order to successfully export
+        days_frame = tk.Frame(export_window)
+        days_frame.pack(pady=5)
+        tk.Label(days_frame, text="Days of data to include:",
+                 font=("Arial", 10)).pack(side=tk.LEFT, padx=5)
+        days_var = tk.StringVar(value="7")
+        tk.Spinbox(days_frame, from_=1, to=365, width=6,
+                   textvariable=days_var).pack(side=tk.LEFT)
+
+        def do_export(kind, fmt):
+            try:
+                days = int(days_var.get())
+            except ValueError:
+                days = 7
+
+            ext = fmt.lower()
+            default_name = f"speedpot_{kind}.{ext}"
+            path = filedialog.asksaveasfilename(
+                parent=export_window,
+                defaultextension=f".{ext}",
+                initialfile=default_name,
+                filetypes=[(f"{fmt.upper()} files", f"*.{ext}"), ("All files", "*.*")]  #Should've done this the first time 'round
+            )
+            if not path:
+                return
+
+            # Map (type, fmt) to the matching ExportManager method
+            method_map = {
+                ("connections", "csv"): lambda: self.export_manager.export_connections_csv(days=days, output_file=path),
+                ("connections", "json"): lambda: self.export_manager.export_connections_json(days=days, output_file=path),
+                ("attacks", "csv"): lambda: self.export_manager.export_attacks_csv(days=days, output_file=path),
+                ("attacks", "json"): lambda: self.export_manager.export_attacks_json(days=days, output_file=path),
+                ("port_scans", "csv"): lambda: self.export_manager.export_port_scans_csv(days=days, output_file=path),
+                ("blocked_ips", "csv"): lambda: self.export_manager.export_blocked_ips_csv(output_file=path),
+                ("statistics", "json"): lambda: self.export_manager.export_statistics(days=days, output_file=path),
+                ("full_report", "json"): lambda: self.export_manager.export_full_report(days=days, output_file=path),
+            }
+
+            func = method_map.get((kind, fmt))
+            if not func:
+                messagebox.showerror("Error", "Unsupported export type.", parent=export_window)
+                return
+
+            try:
+                success, result = func()
+                if success:
+                    self.update_log(f"[INFO] Exported {kind} to {result}")
+                    messagebox.showinfo("Export Complete",
+                                        f"Successfully exported {kind}:\n{result}",
+                                        parent=export_window)
+                else:
+                    messagebox.showerror("Export Failed", str(result), parent=export_window)
+            except Exception as e:
+                messagebox.showerror("Error", f"Export failed: {e}", parent=export_window)
+
+        # Export option buttons
+        options = [
+            ("Connections (CSV)", "connections", "csv"),
+            ("Connections (JSON)", "connections", "json"),
+            ("Detected Attacks (CSV)", "attacks", "csv"),
+            ("Detected Attacks (JSON)", "attacks", "json"),
+            ("Port Scans (CSV)", "port_scans", "csv"),
+            ("Blocked IPs (CSV)", "blocked_ips", "csv"),
+            ("Statistics Summary (JSON)", "statistics", "json"),
+            ("Full Report (JSON)", "full_report", "json"),
+        ]
+
+        for label, kind, fmt in options:
+            tk.Button(export_window, text=label, width=32,
+                      command=lambda k=kind, f=fmt: do_export(k, f)).pack(pady=3)
 
 
     def create_logs_tab(self):
-        """Create the logs tab"""
         logs_frame = ttk.Frame(self.notebook)
         self.notebook.add(logs_frame, text="Logs")
         
@@ -444,7 +588,6 @@ class HoneypotGUI:
 
 
     def create_analytics_tab(self):
-        """Create the analytics tab"""
         analytics_frame = ttk.Frame(self.notebook)
         self.notebook.add(analytics_frame, text="Analytics")
         
@@ -480,7 +623,6 @@ class HoneypotGUI:
 
 
     def view_blocked_ips_simple(self):
-        """Display currently blocked IPs from the database"""
         blocked_window = tk.Toplevel(self.root)
         blocked_window.title("Blocked IP Addresses")
         blocked_window.geometry("800x500")
@@ -494,7 +636,6 @@ class HoneypotGUI:
             blocked_window.destroy()
             return
         
-        # Header
         tk.Label(blocked_window, text="Currently Blocked IP Addresses", 
                 font=("Arial", 16, "bold")).pack(pady=10)
         
@@ -502,7 +643,6 @@ class HoneypotGUI:
         columns = ("IP Address", "Reason", "Blocked At", "Duration", "Auto-Blocked")
         tree = ttk.Treeview(blocked_window, columns=columns, show="headings", height=15)
         
-        # Configure columns
         tree.column("IP Address", width=120, anchor=tk.CENTER)
         tree.column("Reason", width=250, anchor=tk.W)
         tree.column("Blocked At", width=150, anchor=tk.CENTER)
@@ -524,12 +664,10 @@ class HoneypotGUI:
         
         tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Add scrollbars
         v_scrollbar = ttk.Scrollbar(blocked_window, orient=tk.VERTICAL, command=tree.yview)
         v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         tree.configure(yscrollcommand=v_scrollbar.set)
         
-        # Button frame
         button_frame = tk.Frame(blocked_window)
         button_frame.pack(fill=tk.X, padx=10, pady=10)
         
@@ -557,7 +695,6 @@ class HoneypotGUI:
 
 
     def scroll_text(self):
-        """Animate the marquee text"""
         current_x = self.marquee_label.winfo_x()
         new_x = current_x - 2  # Move left by 2 pixels each step
         
@@ -702,8 +839,15 @@ class HoneypotGUI:
                         # Update the service status table from main thread
                         self.root.after(0, self.update_service_status_table)
 
-                    self.update_log(f'[CONNECTION] {client_ip} → Port {port}')
-                    logging.info(f'Connection attempt from {client_address} on port {port}')
+                    # NEW: v1.5: Resolve flag, country name, and code for live and file logs.
+                    country_label = self.format_country(client_ip)
+                    country_suffix = f" [{country_label}]" if country_label != "Unknown" else ""
+
+                    self.update_log(f'[CONNECTION] {client_ip} → Port {port}{country_suffix}')
+                    logging.info(
+                        f'Connection attempt from {client_address} on port {port}'
+                        f'{country_suffix}'
+                    )
 
                     payload_data = ""
                     headers = {}
@@ -712,6 +856,7 @@ class HoneypotGUI:
                         payload_data = client_socket.recv(4096).decode('utf-8', errors='ignore')
                         
                         # Parse HTTP headers if present
+                        # Sometimes this doesn't parse properly, have to fix
                         if payload_data.startswith(('GET', 'POST', 'PUT', 'DELETE', 'HEAD')):
                             lines = payload_data.split('\r\n')
                             for line in lines[1:]:
@@ -732,6 +877,38 @@ class HoneypotGUI:
                     )
 
                     threat_data = self.threat_intel.analyze_ip(client_ip)
+
+                    # Reconcile every available threat signal into one connection-level
+                    # rating. Previously, this field only reflected external threat
+                    # intelligence, so locally detected attacks could still appear as
+                    # UNKNOWN in Recent Attacks and exports.
+
+                    severity_rank = {
+                        'UNKNOWN': 0,
+                        'CLEAN': 0,
+                        'LOW': 1,
+                        'MEDIUM': 2,
+                        'HIGH': 3,
+                        'CRITICAL': 4,
+                    }
+
+                    candidate_levels = [
+                        str(threat_data.get('threat_level') or 'UNKNOWN').upper()
+                    ]
+                    candidate_levels.extend(
+                        str(attack.get('severity') or 'UNKNOWN').upper()
+                        for attack in detected_attacks
+                    )
+                    if scan_result:
+                        candidate_levels.append(
+                            str(scan_result.get('threat_level') or 'UNKNOWN').upper()
+                        )
+
+                    connection_threat_level = max(
+                        candidate_levels,
+                        key=lambda level: severity_rank.get(level, 0)
+                    )
+                    locally_detected_threat = bool(detected_attacks or scan_result)
                     
                     connection_data = {
                         'ip_address': client_ip,
@@ -742,10 +919,10 @@ class HoneypotGUI:
                         'payload': payload_data[:500] if payload_data else None,
                         'user_agent': headers.get('User-Agent', None),
                         'threat_score': max(threat_data.get('abuseipdb_score', 0), threat_data.get('virustotal_score', 0)),
-                        'threat_level': threat_data.get('threat_level', 'UNKNOWN'),
+                        'threat_level': connection_threat_level,
                         'country_code': threat_data.get('country_code', ''),
                         'isp': threat_data.get('isp', ''),
-                        'is_malicious': threat_data.get('is_malicious', False),
+                        'is_malicious': bool(threat_data.get('is_malicious', False) or locally_detected_threat),
                         'scan_detected': scan_result is not None
                     }
 
@@ -769,12 +946,36 @@ class HoneypotGUI:
                             
                             self.update_log(f'[ATTACK DETECTED] {attack["type"]} from {client_ip} on port {port} - Severity: {attack["severity"]}')
                             logging.warning(f'Attack detected: {attack["type"]} from {client_ip} - {attack.get("matched", "")}')
-                            
+
+                            # NEW: v1.5: Send alert notification for detected attack
+                            if self.alert_manager:
+                                try:
+                                    self.alert_manager.alert_attack(
+                                        ip_address=client_ip,
+                                        attack_type=attack['type'],
+                                        severity=attack['severity'],
+                                        payload=attack.get('matched', '')[:200],
+                                        port=port
+                                    )
+                                except Exception as e:
+                                    logging.error(f"Failed to send attack alert: {e}")
+
                             if attack['severity'] == 'Critical':
                                 self.db_manager.block_ip(client_ip, f"Auto-blocked: {attack['type']}", 
                                                        duration_hours=48, auto_blocked=True, 
                                                        threat_score=100)
                                 self.update_log(f'[AUTO-BLOCKED] {client_ip} due to {attack["type"]} attack')
+
+                                # NEW: v1.5: Send alert notification for auto-block
+                                if self.alert_manager:
+                                    try:
+                                        self.alert_manager.alert_block(
+                                            ip_address=client_ip,
+                                            reason=f"Auto-blocked: {attack['type']} attack",
+                                            duration="48 hours"
+                                        )
+                                    except Exception as e:
+                                        logging.error(f"Failed to send block alert: {e}")
                     
                     if threat_data.get('enabled', True):
                         self.db_manager.update_threat_intelligence(client_ip, threat_data)
@@ -785,7 +986,18 @@ class HoneypotGUI:
                     if scan_result:
                         self.update_log(f'[SCAN DETECTED] {scan_result["scan_type"]} from {client_ip} - {scan_result["ports_scanned"]} ports in {scan_result["time_window"]}s - Threat: {scan_result["threat_level"]}')
                         self.db_manager.log_port_scan(scan_result)
-                        
+
+                        #NEW: v1.5: Send alert notification for port scan
+                        if self.alert_manager:
+                            try:
+                                self.alert_manager.alert_port_scan(
+                                    ip_address=client_ip,
+                                    ports_scanned=scan_result['ports_scanned'],
+                                    scan_type=scan_result['scan_type']
+                                )
+                            except Exception as e:
+                                logging.error(f"Failed to send port scan alert: {e}")
+
                         if scan_result['threat_level'] in ['HIGH', 'CRITICAL']:
                             self.db_manager.block_ip(client_ip, f"Auto-blocked: {scan_result['scan_type']}", 
                                                    duration_hours=24, auto_blocked=True, 
@@ -809,9 +1021,9 @@ class HoneypotGUI:
         
         self.update_log('[INFO] Honeypot server thread exiting')
 
-
+    # When doing a banner grab or enumerating the simulated services, these are the banners that will be displayed
+    # This makes the honeypot more appealing for the attacker to get in
     def get_service_banner(self, port):
-        """Return appropriate service banner based on port"""
         banners = {
             21: "220 FTP Server Ready\r\n",
             22: "SSH-2.0-OpenSSH_7.4\r\n",
@@ -826,7 +1038,6 @@ class HoneypotGUI:
 
 
     def open_security_dashboard(self):
-        """Open the security dashboard window"""
         dashboard_window = tk.Toplevel(self.root)
         dashboard_window.title("Security Dashboard")
         dashboard_window.geometry("800x600")
@@ -874,7 +1085,6 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
 
 
     def open_threat_analysis(self):
-        """Open threat analysis window"""
         analysis_window = tk.Toplevel(self.root)
         analysis_window.title("Threat Analysis")
         analysis_window.geometry("600x500")
@@ -916,7 +1126,7 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
                 result_text.insert(tk.END, f"AbuseIPDB Score: {threat_data.get('abuseipdb_score', 0)}/100\n")
                 result_text.insert(tk.END, f"VirusTotal Score: {threat_data.get('virustotal_score', 0)}/100\n")
                 result_text.insert(tk.END, f"Threat Level: {threat_data.get('threat_level', 'UNKNOWN')}\n")
-                result_text.insert(tk.END, f"Country: {threat_data.get('country_code', 'Unknown')}\n")      # These don't work right now...
+                result_text.insert(tk.END, f"Country: {threat_data.get('country_code', 'Unknown')}\n")
                 result_text.insert(tk.END, f"ISP: {threat_data.get('isp', 'Unknown')}\n")
                 
                 if is_own_ip:
@@ -947,34 +1157,40 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
         self.log_display.config(state='normal')
         
         # Color coding based on message type
+        # Highlight threat messages in red
+        # Highlight auto-block in purple
+        # Highlight scan detection in orange
+        # Highlight attack detection in yellow
+
+        
         if "[THREAT]" in message or "[BLOCKED]" in message:
             self.log_display.insert(tk.END, f"{message}\n")
-            # Highlight threat messages in red
             start_line = self.log_display.index(tk.END + "-2l linestart")
             end_line = self.log_display.index(tk.END + "-2l lineend")
             self.log_display.tag_add("threat", start_line, end_line)
             self.log_display.tag_config("threat", foreground="#ff4444")
+
         elif "[SCAN DETECTED]" in message:
             self.log_display.insert(tk.END, f"{message}\n")
-            # Highlight scan detection in orange
             start_line = self.log_display.index(tk.END + "-2l linestart")
             end_line = self.log_display.index(tk.END + "-2l lineend")
             self.log_display.tag_add("scan", start_line, end_line)
             self.log_display.tag_config("scan", foreground="#ffaa44")
+
         elif "[AUTO-BLOCKED]" in message:
             self.log_display.insert(tk.END, f"{message}\n")
-            # Highlight auto-block in purple
             start_line = self.log_display.index(tk.END + "-2l linestart")
             end_line = self.log_display.index(tk.END + "-2l lineend")
             self.log_display.tag_add("autoblock", start_line, end_line)
             self.log_display.tag_config("autoblock", foreground="#aa44ff")
+
         elif "[ATTACK DETECTED]" in message:
             self.log_display.insert(tk.END, f"{message}\n")
-            # Highlight attack detection in yellow
             start_line = self.log_display.index(tk.END + "-2l linestart")
             end_line = self.log_display.index(tk.END + "-2l lineend")
             self.log_display.tag_add("attack", start_line, end_line)
             self.log_display.tag_config("attack", foreground="#ffcc00")
+
         else:
             self.log_display.insert(tk.END, f"{message}\n")
         
@@ -992,7 +1208,6 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
 
 
     def flush_logs(self):
-        """Clear the log display and optionally the log file"""
         response = messagebox.askyesno("Flush Logs", "Do you want to clear the log display and log file?")
         if response:
             self.log_display.config(state='normal')
@@ -1001,7 +1216,7 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
             
             # Clear the log file
             try:
-                with open('honeypot.log', 'w') as f:
+                with open(HONEYPOT_LOG, 'w') as f:
                     f.write('')
                 self.update_log("[INFO] Log data flushed successfully.")
                 logging.info("Log data flushed by user")
@@ -1010,7 +1225,6 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
 
 
     def block_connections(self):
-        """Enhanced blocking system with IP selection options"""
         block_window = tk.Toplevel(self.root)
         block_window.title("Connection Blocking Options")
         block_window.geometry("400x300")
@@ -1089,7 +1303,6 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
 
 
     def open_options_window(self):
-        """Open the options configuration window"""
         try:
             options_window = OptionsWindow(self.root)
             
@@ -1106,8 +1319,36 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
             messagebox.showerror("Error", f"Could not open options window: {str(e)}")
 
 
+    def format_country(self, ip_address, country_code=''):
+        """NEW v1.5: Build a readable country label using GeoIP data.
+
+        Returns something like '🇨🇦 Canada (CA)'. Falls back gracefully
+        when GeoIP is unavailable or the country cannot be resolved.
+        """
+        code = country_code
+        name = None
+        try:
+            if self.geoip:
+                # Look up by IP when we don't already have a stored code
+                if not code:
+                    code, name = self.geoip.get_country(ip_address)
+                else:
+                    _, name = self.geoip.get_country(ip_address)
+                flag = self.geoip.get_country_flag(code) if code else ''
+            else:
+                flag = ''
+        except Exception:
+            flag = ''
+
+        if not code:
+            return "Unknown"
+
+        if name:
+            return f"{flag} {name} ({code})".strip()
+        return f"{flag} {code}".strip()
+
+
     def view_captured_ips(self):
-        """Display captured IPs from the database"""
         captured_window = tk.Toplevel(self.root)
         captured_window.title("Captured IP Addresses")
         captured_window.geometry("900x500")
@@ -1130,12 +1371,15 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
         
         # Add data to tree
         for conn in connections:
+            # NEW v1.5: Resolve country via GeoIP for display
+            country_display = self.format_country(conn.get('ip_address', ''),
+                                                  conn.get('country_code', ''))
             tree.insert("", tk.END, values=(
                 conn.get('ip_address', ''),
                 conn.get('port', ''),
                 conn.get('timestamp', ''),
                 conn.get('threat_level', 'UNKNOWN'),
-                conn.get('country_code', '')
+                country_display
             ))
         
         tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -1147,9 +1391,8 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
 
 
     def cleanup_logs(self, retention_days):
-        """Clean up old log files based on retention policy"""
         try:
-            log_file = 'honeypot.log'
+            log_file = str(HONEYPOT_LOG)
             
             if os.path.exists(log_file):
                 file_age_days = (time.time() - os.path.getmtime(log_file)) / (24 * 3600)
@@ -1164,7 +1407,6 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
 
 
     def schedule_checker(self):
-        """Background thread to check scheduled tasks"""
         while True:
             try:
                 current_config = load_config()
@@ -1187,11 +1429,10 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
 
 
     def check_log_size(self):
-        """Background thread to monitor log file size"""
         while True:
             try:
                 current_config = load_config()
-                log_file = 'honeypot.log'
+                log_file = str(HONEYPOT_LOG)
                 
                 if os.path.exists(log_file):
                     file_size_mb = os.path.getsize(log_file) / (1024 * 1024)
@@ -1233,7 +1474,6 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
 
 
     def show_tip_of_the_day(self):
-        """Display a tip of the day"""
         tip = random.choice(self.tips)
         messagebox.showinfo("Tip of the Day", tip)
 
@@ -1251,14 +1491,12 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
     
 
     def toggle_service(self, service_name):
-        """Handle service toggle"""
         enabled = self.service_states[service_name].get()
         status = "enabled" if enabled else "disabled"
         self.update_log(f"[INFO] {service_name} service {status}")
     
 
     def apply_service_changes(self):
-        """Apply service configuration changes"""
         enabled_services = []
         disabled_services = []
         
@@ -1280,7 +1518,6 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
     
 
     def update_service_status_table(self):
-        """Update the service status table in the dashboard"""
         # Clear existing items
         for item in self.service_tree.get_children():
             self.service_tree.delete(item)
@@ -1312,13 +1549,8 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
                 self.service_tree.set(item, "Status", "Inactive")
                 # self.service_tree.item(item, tags=("inactive",))
         
-        # Configure tags if used for coloring (example)
-        # self.service_tree.tag_configure("active", background="light green")
-        # self.service_tree.tag_configure("inactive", background="salmon")
-
 
     def auto_refresh_tabs(self):
-        """Background thread to auto-refresh Recent Attacks and Analytics tabs"""
         while True:
             try:
                 time.sleep(10)  # Refresh every 10 seconds
@@ -1335,7 +1567,6 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
     
 
     def refresh_recent_attacks(self):
-        """Refresh the Recent Attacks tab with latest data"""
         try:
             # Get recent connections from database
             connections = self.db_manager.get_recent_connections(limit=50)
@@ -1401,7 +1632,6 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
     
 
     def refresh_analytics(self):
-        """Refresh the Analytics tab with latest statistics"""
         try:
             # Get statistics from database
             stats = self.db_manager.get_statistics(24)  # Last 24 hours
@@ -1522,7 +1752,6 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
 
 
     def view_detected_attacks(self):
-        """Display detected attack patterns from the database"""
         attacks_window = tk.Toplevel(self.root)
         attacks_window.title("Detected Attack Patterns")
         attacks_window.geometry("1000x600")
@@ -1648,7 +1877,6 @@ Malicious IPs: {stats.get('malicious_ips', 0)}
 
     # Added on_closing handler for graceful shutdown
     def on_closing(self):
-        """Handle window close event with proper cleanup"""
         if self.running:
             self.update_log("[INFO] Stopping honeypot before closing...")
             self.stop_honeypot()
