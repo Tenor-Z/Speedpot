@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Speedpot Logo](speedpot.ico)
+![Speedpot Logo](/images/speedpot.ico)
 
 **A comprehensive, intelligent honeypot designed to detect, analyze, and block cyber attacks in real-time.**
 
